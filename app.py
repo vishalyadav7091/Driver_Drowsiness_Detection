@@ -77,20 +77,84 @@ eye_model = model if use_cnn else None
 st.title("Driver Drowsiness Detection")
 st.caption("EAR landmarks + CNN eye state + temporal fusion, built with OpenCV, MediaPipe and Keras")
 
+
 # ---------------------------------------------------------------- upload mode
 if mode == "Upload video":
-    up = st.file_uploader("Upload a driving or face video", type=["mp4", "avi", "mov", "mkv"])
+    up = st.file_uploader(
+        "Upload a driving or face video",
+        type=["mp4", "avi", "mov", "mkv"],
+    )
+
     if up is not None and st.button("Analyse video", type="primary"):
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=Path(up.name).suffix)
-        tmp_path = Path(tmp.name)
-        cap, pipe = None, None
+        tmp_path = None
+        cap = None
+        pipe = None
+
         try:
-            tmp.write(up.read())
-            tmp.close()
+            suffix = Path(up.name).suffix or ".mp4"
+
+            with tempfile.NamedTemporaryFile(
+                delete=False, suffix=suffix
+            ) as tmp:
+                tmp.write(up.getvalue())
+                tmp_path = Path(tmp.name)
+
             cap = cv2.VideoCapture(str(tmp_path))
+
             if not cap.isOpened():
-                st.error("Could not open that video. Try an MP4 (H.264).")
-                st.stop()
-            fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
-            pipe = DrowsinessPipeline(cfg, eye_model, calibrate)
+                st.error("Could not open the video. Try an MP4 video.")
+            else:
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                if not fps or fps <= 0:
+                    fps = 30.0
+
+                total = max(
+                    1, int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                )
+
+                pipe = DrowsinessPipeline(
+                    cfg, eye_model, calibrate
+                )
+
+                progress = st.progress(0)
+                status = st.empty()
+                preview = st.empty()
+
+                frame_number = 0
+
+                while True:
+                    ok, frame = cap.read()
+                    if not ok:
+                        break
+
+                    # Keep your existing pipeline API here.
+                    # This call assumes process(frame) returns a result.
+                    res = pipe.process(frame)
+
+                    frame_number += 1
+                    progress.progress(
+                        min(1.0, frame_number / total)
+                    )
+                    status.write(
+                        f"Analysing frame {frame_number} of {total}"
+                    )
+
+                    # Display the original frame until the
+                    # pipeline's annotated-frame API is confirmed.
+                    preview.image(
+                        cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
+                        channels="RGB",
+                        use_container_width=True,
+                    )
+
+                status.success("Video analysis completed.")
+
+        except Exception as exc:
+            st.error(f"Video analysis failed: {exc}")
+
+        finally:
+            if cap is not None:
+                cap.release()
+
+            if tmp_path is not None:
+                tmp_path.unlink(missing_ok=True)
