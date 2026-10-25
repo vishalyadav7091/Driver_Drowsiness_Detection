@@ -120,9 +120,18 @@ elif mode == "Live webcam":
 # ---------------------------------------------------------------- about
 else:
     st.subheader("How it works")
+
     st.markdown(f"""
-1. **MediaPipe Face Mesh** finds 478 landmarks on every frame.
-2. **Geometry**: the Eye Aspect Ratio (EAR), Mouth Aspect Ratio (MAR) and head pitch are computed from landmarks.
-3. **Eye CNN**: each eye is cropped and classified open or closed by a small Keras CNN.
-4. **Fusion**: an eye counts as closed when EAR and the CNN agree, or when the CNN is above {cfg.CNN_CONF:.2f} and EAR is borderline.
-5. **State machine**: `ALERT` to `DROWSY` (PERCLOS above {cfg.PERCLOS_DROWSY}, repeated yawns or nods) to `SLEEPING` (eyes closed for {cfg.CLOSURE_SECONDS} s or more), with hysteresis so the label does not flicker.
+1. **MediaPipe Face Mesh** finds 478 facial landmarks on every frame.
+2. **Geometry:** Eye Aspect Ratio (EAR), Mouth Aspect Ratio (MAR), and head pitch are calculated from landmarks.
+3. **Eye CNN:** Each eye is cropped and classified as open or closed by the CNN model.
+4. **Fusion:** An eye counts as closed when EAR and CNN agree, or when CNN confidence is above {cfg.CNN_CONF:.2f} and EAR is borderline.
+5. **State machine:** The system transitions from `ALERT` to `DROWSY` and then `SLEEPING`, based on eye closure, PERCLOS, yawns, and head nods.
+
+**Privacy:** Live webcam frames are processed in memory. Uploaded videos are stored temporarily for analysis.
+""")
+
+    st.caption(
+        "Limitations: Low light, sunglasses, and extreme head angles "
+        "can reduce accuracy. This is not a certified safety device."
+    )
