@@ -1,4 +1,5 @@
-            left, right = st.columns([3, 1.25])
+"""Streamlit dashboard for the Driver Drowsiness Detection System.
+left, right = st.columns([3, 1.25])
             frame_slot, badge_slot, met_slot = left.empty(), right.empty(), right.empty()
             bar = st.progress(0.0)
             rows, i = [], 0
