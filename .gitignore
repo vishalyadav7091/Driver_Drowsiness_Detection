@@ -1,0 +1,13 @@
+.venv312/
+.pytest_cache/
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+data/eyes/
+data/raw/
+outputs/*
+!outputs/.gitkeep
+models/*
+!models/.gitkeep
+!models/eye_state_cnn.keras
